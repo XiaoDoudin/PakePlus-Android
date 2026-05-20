@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寻匿启动器</title>
+<style>
+    /* 基础设置 */
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Microsoft YaHei',sans-serif}
+    
+    /* 1. 背景颜色 - 改为白色 */
+    body{background:#ffffff;color:#333333;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;line-height:1.6}
+    
+    /* 2. 主容器颜色 - 改为超浅蓝 */
+    .container{width:100%;max-width:800px;background:#f0f8ff;border-radius:12px;padding:30px;box-shadow:0 10px 30px rgba(0,0,0,0.1);text-align:center;border:1px solid #e6f2ff}
+    
+    /* 3. 标题颜色 - 改为淡粉色 */
+    h1{color:#ffb6c1;margin-bottom:10px;font-size:2.2rem;text-shadow:1px 1px 2px rgba(0,0,0,0.1)}
+    
+    /* 4. 副标题颜色 - 改为淡灰色 */
+    .subtitle{color:#a0a0a0;margin-bottom:30px;font-size:1.1rem}
+    
+    /* 5. 状态容器 - 改为更浅的蓝色 */
+    .status-container{background:#e6f2ff;border-radius:10px;padding:25px;margin-bottom:30px;border-left:5px solid #ffb6c1;border:1px solid #d9ecff}
+    
+    /* 6. 状态文字颜色 */
+    .status-text{font-size:1.4rem;margin-bottom:15px;color:#333333;min-height:28px}
+    
+    /* 7. 时间预测颜色 */
+    .time-prediction{font-size:1rem;margin-bottom:15px;color:#666666;min-height:24px}
+    
+    /* 8. 进度条容器 */
+    .progress-container{width:100%;background:#ffffff;border-radius:50px;overflow:hidden;margin:20px 0;height:24px;position:relative;border:1px solid #e0e0e0}
+    
+    /* 9. 进度条 - 改为淡粉色渐变 */
+    .progress-bar{height:100%;background:linear-gradient(90deg,#ffb6c1,#ff99cc);border-radius:50px;width:0%;transition:width 0.3s ease;position:relative;overflow:hidden}
+    .progress-bar::after{content:'';position:absolute;top:0;left:0;bottom:0;right:0;background-image:linear-gradient(-45deg,rgba(255,255,255,0.3)25%,transparent 25%,transparent 50%,rgba(255,255,255,0.3)50%,rgba(255,255,255,0.3)75%,transparent 75%,transparent);z-index:1;background-size:50px 50px;animation:move 2s linear infinite}
+    @keyframes move{0%{background-position:0 0}100%{background-position:50px 50px}}
+    
+    /* 10. 进度百分比 - 改为粉色 */
+    .progress-percent{font-size:1.8rem;font-weight:bold;color:#ff69b4;margin-top:10px;margin-bottom:20px}
+    
+    /* 11. 并行下载容器 */
+    .parallel-container{display:flex;justify-content:space-between;margin:15px 0;gap:5px}
+    .parallel-progress{flex:1;height:8px;background:#ffffff;border-radius:4px;overflow:hidden;position:relative;border:1px solid #e0e0e0}
+    
+    /* 12. 并行进度条 - 改为浅蓝渐变 */
+    .parallel-bar{height:100%;background:linear-gradient(90deg,#87ceeb,#add8e6);border-radius:4px;width:0%;transition:width 0.3s ease}
+    .parallel-label{font-size:0.7rem;color:#666666;margin-top:5px}
+    
+    /* 13. 缓存信息 - 改为浅蓝色 */
+    .cache-info{background:#e6f2ff;border-radius:8px;padding:15px;margin-top:20px;font-size:0.9rem;color:#666666;border:1px dashed #87ceeb}
+    
+    /* 14. 主要按钮 - 改为淡粉色渐变 */
+    .load-btn{padding:12px 25px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.3s ease;background:linear-gradient(to right,#ffb6c1,#ff99cc);color:#333333;margin-top:10px;border:1px solid #ffb6c1}
+    .load-btn:hover{transform:translateY(-3px);box-shadow:0 5px 15px rgba(255,182,193,0.3);background:linear-gradient(to right,#ff99cc,#ffb6c1)}
+    
+    /* 15. 更新对话框 */
+    .update-dialog{background:#e6f2ff;border-radius:10px;padding:25px;margin-top:25px;border:2px solid #ffb6c1;display:none}
+    .update-dialog h3{color:#ff69b4;margin-bottom:15px;font-size:1.5rem}
+    
+    /* 16. 更新内容 */
+    .update-content{background:#ffffff;border-radius:8px;padding:15px;margin:15px 0;max-height:200px;overflow-y:auto;text-align:left;color:#666666;line-height:1.5;white-space:pre-wrap;border:1px solid #e0e0e0}
+    
+    /* 17. 更新按钮 */
+    .update-buttons{display:flex;justify-content:center;gap:15px;margin-top:20px}
+    .update-btn{padding:10px 25px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.3s ease;border:1px solid #e0e0e0}
+    .update-now{background:linear-gradient(to right,#98fb98,#90ee90);color:#333333}
+    .update-later{background:linear-gradient(to right,#d3d3d3,#c0c0c0);color:#333333}
+    .update-btn:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,0.1)}
+    
+    /* 18. 版本信息 */
+    .version-info{background:#e6f2ff;border-radius:8px;padding:10px;margin-top:10px;font-size:0.9rem;color:#666666;border:1px solid #d9ecff}
+    
+    /* 19. 页脚 */
+    .footer{margin-top:30px;color:#a0a0a0;font-size:0.9rem;text-align:center}
+    
+    /* 20. 下载统计 */
+    .download-stats{display:flex;justify-content:space-between;margin-top:10px;font-size:0.8rem;color:#666666}
+    .stat-item{flex:1;text-align:center}
+    
+    /* 21. 操作按钮 */
+    .action-buttons{display:flex;gap:10px;justify-content:center;margin-top:15px}
+    .action-btn{padding:8px 16px;border:none;border-radius:6px;font-size:0.9rem;cursor:pointer;transition:all 0.3s ease;border:1px solid transparent}
+    .cache-btn{background:linear-gradient(to right,#87ceeb,#add8e6);color:#333333}
+    .no-cache-btn{background:linear-gradient(to right,#ffb6c1,#ff99cc);color:#333333}
+    .action-btn:hover{transform:translateY(-2px);opacity:0.9;box-shadow:0 5px 15px rgba(0,0,0,0.1)}
+    
+    /* 22. 警告文字 */
+    .warning-text{color:#ff6b6b;font-size:0.8rem;margin-top:5px;display:none}
+    
+    /* 23. 内存信息 */
+    .memory-info{color:#87ceeb;font-size:0.8rem;margin-top:5px}
+    
+    /* 24. 自动启动计时器 */
+    .auto-launch-timer{color:#66cdaa;font-size:0.9rem;margin-top:15px;display:none}
+    
+    /* 25. 存储信息 */
+    .storage-info{background:#e6f2ff;border-radius:8px;padding:10px;margin-top:10px;font-size:0.9rem;color:#666666;border:1px solid #87ceeb}
+    
+    /* 26. 响应式设计 */
+    @media (max-width:768px){
+        .container{padding:20px}
+        h1{font-size:1.8rem}
+        .load-btn,.update-btn{width:100%}
+        .update-buttons{flex-direction:column}
+        .parallel-container{flex-wrap:wrap}
+        .parallel-progress{flex:0 0 48%;margin-bottom:10px}
+        .action-buttons{flex-direction:column}
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>寻匿</h1>
+        <p class="subtitle">启动器</p>
+        
+        <div class="status-container">
+            <div class="status-text" id="statusText">正在初始化...</div>
+            <div class="time-prediction" id="timePrediction"></div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="progress-percent" id="progressPercent">0%</div>
+            
+            <div id="parallelContainer" style="display:none">
+                <div class="parallel-container" id="parallelBars"></div>
+                <div class="download-stats" id="downloadStats"></div>
+            </div>
+            
+            <div class="version-info" id="versionInfo">版本检测中...</div>
+            <div class="storage-info" id="storageInfo">正在检查存储系统...</div>
+            <div class="cache-info" id="cacheInfo">正在检查本地文件...</div>
+            <div class="auto-launch-timer" id="autoLaunchTimer"></div>
+            <div class="memory-info" id="memoryInfo"></div>
+            <div class="warning-text" id="warningText">注意：文件较大，保存可能需要时间，请勿关闭页面</div>
+            
+            <button class="load-btn" id="loadBtn" style="display:none">开始下载</button>
+            
+            <div class="action-buttons" id="actionButtons" style="display:none">
+                <button class="action-btn cache-btn" id="cacheBtn">下载并保存TXT文件</button>
+                <button class="action-btn no-cache-btn" id="noCacheBtn">仅下载不保存</button>
+            </div>
+            
+            <div class="update-dialog" id="updateDialog">
+                <h3>发现新版本！</h3>
+                <div class="update-content" id="updateContent">正在获取更新内容...</div>
+                <p>是否立即更新？</p>
+                <div class="update-buttons">
+                    <button class="update-btn update-now" id="updateNowBtn">立即更新</button>
+                    <button class="update-btn update-later" id="updateLaterBtn">稍后更新（自动启动当前版本）</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ========== 全局变量 ==========
+        const statusText=document.getElementById('statusText'),
+        timePrediction=document.getElementById('timePrediction'),
+        progressBar=document.getElementById('progressBar'),
+        progressPercent=document.getElementById('progressPercent'),
+        versionInfo=document.getElementById('versionInfo'),
+        storageInfo=document.getElementById('storageInfo'),
+        cacheInfo=document.getElementById('cacheInfo'),
+        autoLaunchTimer=document.getElementById('autoLaunchTimer'),
+        memoryInfo=document.getElementById('memoryInfo'),
+        loadBtn=document.getElementById('loadBtn'),
+        updateDialog=document.getElementById('updateDialog'),
+        updateContent=document.getElementById('updateContent'),
+        updateNowBtn=document.getElementById('updateNowBtn'),
+        updateLaterBtn=document.getElementById('updateLaterBtn'),
+        parallelContainer=document.getElementById('parallelContainer'),
+        parallelBars=document.getElementById('parallelBars'),
+        downloadStats=document.getElementById('downloadStats'),
+        actionButtons=document.getElementById('actionButtons'),
+        cacheBtn=document.getElementById('cacheBtn'),
+        noCacheBtn=document.getElementById('noCacheBtn'),
+        warningText=document.getElementById('warningText');
+        
+        const GZ_FILE='android.txt.gz',
+        VER_FILE='ver.txt',
+        UPDATE_FILE='UPnew.txt',
+        PARALLEL_COUNT=2;
+        
+        let startTime,lastProgressTime,lastProgressPercent=0,
+        hasNetwork=true,serverVersion=null,localVersion=null,
+        parallelDownloads=[],totalDownloaded=0,totalSize=0,
+        downloadSpeed=0,activeDownloads=0,shouldCache=true,
+        isUpdating=false,db=null,autoLaunchCountdown=null,
+        cachedTxtContent=null,hasCachedContent=false;
+        
+        // ========== IndexedDB 数据库操作 ==========
+        const DB_NAME = 'DongciPlayerDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'files';
+        
+        function initDatabase() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    reject(new Error('浏览器不支持IndexedDB'));
+                    return;
+                }
+                
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = (event) => {
+                    console.error('数据库打开失败:', event.target.error);
+                    reject(event.target.error);
+                };
+                
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    console.log('数据库连接成功');
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                        
+                        store.createIndex('type', 'type', { unique: false });
+                        store.createIndex('version', 'version', { unique: false });
+                        store.createIndex('timestamp', 'timestamp', { unique: false });
+                        
+                        console.log('对象存储空间创建成功');
+                    }
+                };
+            });
+        }
+        
+        async function saveToIndexedDB(id, content, version, type = 'txt') {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    reject(new Error('数据库未初始化'));
+                    return;
+                }
+                
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                const fileData = {
+                    id: id,
+                    type: type,
+                    version: version,
+                    content: content,
+                    timestamp: Date.now(),
+                    size: content.length
+                };
+                
+                const request = store.put(fileData);
+                
+                request.onsuccess = (event) => {
+                    console.log(`软件下载成功，大小: ${formatBytes(content.length)}`);
+                    resolve(true);
+                };
+                
+                request.onerror = (event) => {
+                    console.error('动次下载失败:', event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        async function readFromIndexedDB(id) {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    reject(new Error('数据库未初始化'));
+                    return;
+                }
+                
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(id);
+                
+                request.onsuccess = (event) => {
+                    const result = event.target.result;
+                    if (result) {
+                        console.log(`动次加载中，大小: ${formatBytes(result.content.length)}`);
+                        resolve(result);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                
+                request.onerror = (event) => {
+                    console.error('读取文件失败:', event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        async function checkCachedFile() {
+            try {
+                const cachedData = await readFromIndexedDB('android_content');
+                if (cachedData) {
+                    localVersion = cachedData.version;
+                    cachedTxtContent = cachedData.content;
+                    hasCachedContent = true;
+                    return cachedData;
+                }
+                return null;
+            } catch (error) {
+                console.error('检查动次文件失败:', error);
+                return null;
+            }
+        }
+        
+        async function cleanupOldVersions(currentVersion) {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    resolve();
+                    return;
+                }
+                
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const versionIndex = store.index('version');
+                
+                const request = versionIndex.openCursor();
+                const versionsToDelete = [];
+                
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        const file = cursor.value;
+                        if (file.id !== 'android_content' && 
+                            file.version && 
+                            file.version !== currentVersion) {
+                            versionsToDelete.push(cursor.primaryKey);
+                        }
+                        cursor.continue();
+                    } else {
+                        versionsToDelete.forEach(key => {
+                            store.delete(key);
+                        });
+                        console.log(`清理了 ${versionsToDelete.length} 个旧版本文件`);
+                        resolve();
+                    }
+                };
+                
+                request.onerror = (event) => {
+                    console.error('清理旧版本失败:', event.target.error);
+                    resolve();
+                };
+            });
+        }
+        
+        async function saveToFileSystem(content, version) {
+            try {
+                if ('showSaveFilePicker' in window) {
+                    const options = {
+                        suggestedName: `dongci_v${version}.txt`,
+                        types: [
+                            {
+                                description: '文本文件',
+                                accept: { 'text/plain': ['.txt'] }
+                            }
+                        ]
+                    };
+                    
+                    try {
+                        const fileHandle = await window.showSaveFilePicker(options);
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(content);
+                        await writable.close();
+                        
+                        await saveFileHandle('dongci_file_handle', fileHandle);
+                        
+                        console.log('文件已保存到本地文件系统');
+                        return true;
+                    } catch (error) {
+                        if (error.name === 'AbortError') {
+                            console.log('用户取消了文件保存');
+                            return false;
+                        }
+                        throw error;
+                    }
+                }
+                
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dongci_v${version}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log('文件已通过下载方式保存');
+                return true;
+            } catch (error) {
+                console.error('保存到文件系统失败:', error);
+                return false;
+            }
+        }
+        
+        async function saveFileHandle(id, fileHandle) {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    resolve(false);
+                    return;
+                }
+                
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                const handleData = {
+                    id: id,
+                    type: 'file_handle',
+                    timestamp: Date.now()
+                };
+                
+                const request = store.put(handleData);
+                
+                request.onsuccess = () => resolve(true);
+                request.onerror = (event) => {
+                    console.error('保存文件句柄失败:', event.target.error);
+                    resolve(false);
+                };
+            });
+        }
+        
+        // ========== 自动启动计时器 ==========
+        function startAutoLaunchTimer(seconds = 5) {
+            let countdown = seconds;
+            autoLaunchTimer.style.display = 'block';
+            
+            return new Promise((resolve) => {
+                autoLaunchCountdown = setInterval(() => {
+                    if (countdown > 0) {
+                        autoLaunchTimer.textContent = `${countdown}秒后自动启动...`;
+                        countdown--;
+                    } else {
+                        clearInterval(autoLaunchCountdown);
+                        autoLaunchTimer.textContent = '正在启动...';
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+        
+        function stopAutoLaunchTimer() {
+            if (autoLaunchCountdown) {
+                clearInterval(autoLaunchCountdown);
+                autoLaunchCountdown = null;
+            }
+            autoLaunchTimer.style.display = 'none';
+        }
+        
+        // ========== 初始化 ==========
+        async function init(){
+            startTime=Date.now();lastProgressTime=startTime;
+            updateNowBtn.addEventListener('click',startUpdate);
+            updateLaterBtn.addEventListener('click',() => skipUpdate(true)); // 传入true表示要自动启动
+            cacheBtn.addEventListener('click',()=>{shouldCache=true;startDownload()});
+            noCacheBtn.addEventListener('click',()=>{shouldCache=false;startDownload()});
+            initParallelUI();
+            
+            try {
+                await initDatabase();
+                storageInfo.innerHTML = '文件系统加载成功';
+                await checkCacheAndNetwork();
+            } catch (error) {
+                console.error('存储系统初始化失败:', error);
+                storageInfo.innerHTML = '请允许启动器更改文件权限';
+                await checkCacheAndNetwork();
+            }
+        }
+        
+        // ========== 缓存检查和网络检测 ==========
+        async function checkCacheAndNetwork(){
+            updateProgress(10,'检查本地缓存...','请稍候');
+            
+            // 检查缓存
+            const cachedData = await checkCachedFile();
+            
+            if (cachedData) {
+                versionInfo.innerHTML = `当前版本:v${cachedData.version}`;
+                cacheInfo.innerHTML = `已保存软件(${formatBytes(cachedData.size)})`;
+                memoryInfo.innerHTML = '软件已保存';
+                
+                // 显示启动按钮
+                const oldBtn = document.querySelector('.load-btn:not(#loadBtn)');
+                if(oldBtn) oldBtn.remove();
+                const btn = document.createElement('button');
+                btn.className = 'load-btn';
+                btn.textContent = '立即启动';
+                btn.style.display = 'block';
+                btn.onclick = () => executeContent(cachedData.content, true);
+                loadBtn.parentNode.insertBefore(btn, loadBtn.nextSibling);
+                
+                updateProgress(40,'软件可用','检查更新...');
+                
+                // 有缓存时检查网络
+                checkNetworkStatus().then(async online => {
+                    hasNetwork = online;
+                    if(hasNetwork){
+                        // 有网络：检查更新
+                        setTimeout(() => checkForUpdates(true), 500); // 传入true表示有缓存
+                    }else{
+                        // 无网络：直接自动启动
+                        updateProgress(80,'网络不可用','软件启动中...');
+                        statusText.textContent = '离线模式';
+                        timePrediction.textContent = '启动本地软件版本';
+                        setTimeout(() => autoLaunchFromCache(), 1000);
+                    }
+                }).catch(() => {
+                    hasNetwork = true;
+                    setTimeout(() => checkForUpdates(true), 500);
+                });
+                
+            } else {
+                // 没有缓存
+                versionInfo.innerHTML = '无本地缓存';
+                cacheInfo.innerHTML = '请下载软件';
+                
+                checkNetworkStatus().then(online => {
+                    hasNetwork = online;
+                    if(hasNetwork){
+                        actionButtons.style.display = 'flex';
+                        updateProgress(0,'准备就绪','选择下载方式');
+                    }else{
+                        cacheInfo.innerHTML = '无网络且无法检测到软件，无法启动';
+                        loadBtn.style.display = 'block';
+                        loadBtn.textContent = '重试连接';
+                        loadBtn.onclick = () => location.reload();
+                        updateProgress(0,'无法启动','请检查网络');
+                        statusText.style.color = '#e94560';
+                    }
+                });
+            }
+        }
+        
+        // ========== 检查更新（新增：自动启动逻辑） ==========
+        function checkForUpdates(hasCache = false){
+            updateProgress(50,'检查更新...','请稍候');
+            
+            fetch(VER_FILE+'?t='+Date.now())
+                .then(r=>r.ok?r.text():Promise.reject())
+                .then(text=>{
+                    serverVersion=text.trim();
+                    
+                    if(!localVersion){
+                        versionInfo.innerHTML=`无本地版本|最新:v${serverVersion}`;
+                        return;
+                    }
+                    
+                    versionInfo.innerHTML=`当前:v${localVersion}|最新:v${serverVersion}`;
+                    
+                    const localNum=parseInt(localVersion)||0;
+                    const serverNum=parseInt(serverVersion)||0;
+                    
+                    if(serverNum>localNum){
+                        updateProgress(60,'发现新版本','获取更新内容...');
+                        getUpdateContent();
+                    }else{
+                        // 已是最新版本
+                        cacheInfo.innerHTML='已是最新版本';
+                        
+                        if(hasCache && hasCachedContent){
+                            // 有缓存且无更新：自动启动
+                            updateProgress(80,'版本最新','准备自动启动...');
+                            statusText.textContent='版本检查完成';
+                            timePrediction.textContent='自动启动本地最新版本';
+                            
+                            // 显示倒计时
+                            startAutoLaunchTimer(1).then(() => {
+                                executeContent(cachedTxtContent, true);
+                            });
+                        }else{
+                            updateProgress(80,'已最新','可启动');
+                        }
+                    }
+                })
+                .catch(()=>{
+                    // 检查更新失败
+                    updateProgress(70,'检查失败','使用本地版本');
+                    versionInfo.innerHTML='当前:v'+(localVersion||'未知');
+                    
+                    if(hasCache && hasCachedContent){
+                        // 有缓存但检查失败：仍然自动启动
+                        cacheInfo.innerHTML='检查失败，使用本地缓存';
+                        updateProgress(80,'使用缓存','准备自动启动...');
+                        
+                        startAutoLaunchTimer(1).then(() => {
+                            executeContent(cachedTxtContent, true);
+                        });
+                    }else{
+                        cacheInfo.innerHTML='检查失败';
+                    }
+                });
+        }
+        
+        // ========== 获取更新内容 ==========
+        function getUpdateContent(){
+            fetch(UPDATE_FILE+'?t='+Date.now())
+                .then(r=>r.ok?r.text():`版本v${serverVersion}更新内容：\n•性能优化\n•错误修复\n•新功能`)
+                .then(text=>{
+                    updateContent.textContent=text;
+                    updateDialog.style.display='block';
+                    updateProgress(70,'发现新版本','请选择是否更新');
+                    statusText.textContent='发现新版本';
+                    timePrediction.textContent='请选择是否更新';
+                })
+                .catch(()=>{
+                    updateContent.textContent=`版本v${serverVersion}更新内容：\n•性能优化\n•错误修复\n•新功能`;
+                    updateDialog.style.display='block';
+                    updateProgress(70,'发现新版本','请选择是否更新');
+                    statusText.textContent='发现新版本';
+                    timePrediction.textContent='请选择是否更新';
+                });
+        }
+        
+        // ========== 从缓存自动启动 ==========
+        function autoLaunchFromCache(){
+            if(hasCachedContent && cachedTxtContent){
+                updateProgress(90,'离线模式','自动启动中...');
+                statusText.textContent='离线模式启动';
+                timePrediction.textContent='启动本地缓存版本';
+                startAutoLaunchTimer(1).then(() => {
+                    executeContent(cachedTxtContent, true);
+                });
+            }
+        }
+        
+        // ========== 下载相关 ==========
+        function startDownload(){
+            actionButtons.style.display='none';
+            loadBtn.style.display='none';
+            const oldBtn=document.querySelector('.load-btn:not(#loadBtn)');
+            if(oldBtn)oldBtn.remove();
+            parallelContainer.style.display='block';
+            totalDownloaded=0;totalSize=0;downloadSpeed=0;activeDownloads=0;
+            startParallelDownload();
+        }
+        
+        async function startParallelDownload(){
+            updateProgress(20,'获取文件信息...','准备下载');
+            try{
+                const size=await getFileSize(GZ_FILE);
+                totalSize=size;
+                updateProgress(30,`文件大小:${formatBytes(size)}`,'开始下载');
+                
+                const chunkSize=Math.ceil(size/PARALLEL_COUNT);
+                parallelDownloads=[];
+                const promises=[];
+                
+                for(let i=0;i<PARALLEL_COUNT;i++){
+                    const start=i*chunkSize;
+                    const end=Math.min(start+chunkSize-1,size-1);
+                    if(start<size){
+                        promises.push(downloadChunk(i,start,end,size));
+                        parallelDownloads[i]={downloaded:0,total:end-start+1};
+                    }
+                }
+                
+                activeDownloads=promises.length;
+                updateDownloadStats();
+                startSpeedCalculator();
+                const chunks=await Promise.all(promises);
+                stopSpeedCalculator();
+                updateProgress(80,'下载完成','处理中...');
+                await processDownloadedGz(chunks);
+            }catch(error){
+                console.error('下载失败:',error);
+                updateProgress(0,'下载失败','请重试');
+                statusText.style.color='#e94560';
+                loadBtn.style.display='block';
+                loadBtn.textContent='重试下载';
+                parallelContainer.style.display='none';
+            }
+        }
+        
+        async function processDownloadedGz(chunks){
+            try{
+                chunks.sort((a,b)=>a.start-b.start);
+                const blobParts=chunks.map(chunk=>chunk.data);
+                const blob=new Blob(blobParts);
+                const version=await downloadVersion();
+                
+                updateProgress(90,'获取版本信息...','请稍候');
+                
+                if(isUpdating) await cleanupOldVersions(version);
+                
+                updateProgress(92,'解压文件...','请稍候');
+                let txtContent = '';
+                
+                if('DecompressionStream' in window){
+                    txtContent = await streamDecompress(blob);
+                }else{
+                    txtContent = await fallbackDecompress(blob);
+                }
+                
+                if(!txtContent || txtContent.length < 100){
+                    throw new Error('解压结果无效');
+                }
+                
+                if(shouldCache){
+                    updateProgress(95,'软件文件保存...','请稍候');
+                    warningText.style.display='block';
+                    
+                    try {
+                        await saveToIndexedDB('android_content', txtContent, version, 'txt');
+                        
+                        const fileSaved = await saveToFileSystem(txtContent, version);
+                        
+                        if(fileSaved){
+                            cacheInfo.innerHTML=`软件文件已保存(${formatBytes(txtContent.length)})`;
+                            memoryInfo.innerHTML='文件已保存到本地';
+                        } else {
+                            cacheInfo.innerHTML=`软件已保存到数据库(${formatBytes(txtContent.length)})`;
+                            memoryInfo.innerHTML='软件保存到IndexedDB';
+                        }
+                        
+                        // 更新缓存变量
+                        cachedTxtContent = txtContent;
+                        hasCachedContent = true;
+                        localVersion = version;
+                        
+                    } catch(saveError) {
+                        console.error('保存文件失败:', saveError);
+                        cacheInfo.innerHTML='保存失败，仅本次使用';
+                    }
+                }
+                
+                // 显示启动按钮
+                const btn=document.createElement('button');
+                btn.className='load-btn';
+                btn.textContent='启动软件';
+                btn.style.display='block';
+                btn.onclick=() => executeContent(txtContent, false);
+                loadBtn.parentNode.insertBefore(btn, loadBtn.nextSibling);
+                
+                versionInfo.innerHTML=`当前版本:v${version}`;
+                updateProgress(100,'准备就绪','启动中...');
+                warningText.style.display='none';
+                
+                if(!shouldCache){
+                    setTimeout(() => executeContent(txtContent, false), 1000);
+                }
+                
+            }catch(error){
+                console.error('处理失败:',error);
+                updateProgress(0,'处理失败','请重试');
+                statusText.style.color='#e94560';
+                loadBtn.style.display='block';
+                loadBtn.textContent='重试';
+                parallelContainer.style.display='none';
+            }
+        }
+        
+        async function streamDecompress(blob){
+            return new Promise((resolve,reject)=>{
+                let content='';
+                const stream=blob.stream();
+                const decompress=new DecompressionStream('gzip');
+                const decoder=new TextDecoderStream('utf-8');
+                const writer=new WritableStream({
+                    write(chunk){content+=chunk;},
+                    close(){resolve(content);}
+                });
+                stream.pipeThrough(decompress).pipeThrough(decoder).pipeTo(writer).catch(reject);
+            });
+        }
+        
+        async function fallbackDecompress(blob){
+            try{
+                const buffer=await blob.arrayBuffer();
+                const decoder=new TextDecoder('utf-8');
+                return decoder.decode(buffer);
+            }catch(error){
+                throw new Error('传统解压失败');
+            }
+        }
+        
+        // ========== 更新相关 ==========
+        function startUpdate(){
+            if(!serverVersion)return;
+            stopAutoLaunchTimer();
+            updateDialog.style.display='none';
+            isUpdating=true;shouldCache=true;
+            updateProgress(10,'开始更新','准备下载');
+            parallelContainer.style.display='block';
+            totalDownloaded=0;totalSize=0;downloadSpeed=0;activeDownloads=0;
+            startParallelDownload();
+        }
+        
+        function skipUpdate(autoLaunch = false){
+            stopAutoLaunchTimer();
+            updateDialog.style.display='none';
+            
+            if(autoLaunch && hasCachedContent && cachedTxtContent){
+                // 稍后更新，但自动启动当前版本
+                updateProgress(90,'使用当前版本','自动启动中...');
+                statusText.textContent='使用当前版本';
+                timePrediction.textContent='启动本地软件版本';
+                
+                startAutoLaunchTimer(1).then(() => {
+                    executeContent(cachedTxtContent, true);
+                });
+            }else if(hasCachedContent){
+                // 显示启动按钮，让用户手动启动
+                updateProgress(90,'使用当前','可手动启动');
+                
+                const btn=document.createElement('button');
+                btn.className='load-btn';
+                btn.textContent='启动当前版本';
+                btn.style.display='block';
+                btn.onclick=() => executeContent(cachedTxtContent, true);
+                loadBtn.parentNode.insertBefore(btn, loadBtn.nextSibling);
+            }else{
+                updateProgress(0,'稍后更新','请下载');
+                actionButtons.style.display='flex';
+            }
+        }
+        
+        // ========== 辅助函数 ==========
+        function checkNetworkStatus(){
+            return new Promise(resolve=>{
+                fetch(VER_FILE+'?t='+Date.now(),{method:'HEAD',cache:'no-cache'})
+                    .then(()=>resolve(true)).catch(()=>resolve(false));
+            });
+        }
+        
+        async function getFileSize(url){
+            try{
+                const r=await fetch(url,{method:'HEAD'});
+                if(r.ok){
+                    const size=r.headers.get('Content-Length');
+                    return size?parseInt(size):0;
+                }
+                const xhr=new XMLHttpRequest();
+                return new Promise((resolve,reject)=>{
+                    xhr.open('GET',url);
+                    xhr.setRequestHeader('Range','bytes=0-0');
+                    xhr.onload=()=>{
+                        const cr=xhr.getResponseHeader('Content-Range');
+                        if(cr){
+                            const m=cr.match(/bytes \d+-\d+\/(\d+)/);
+                            if(m)resolve(parseInt(m[1]));
+                            else reject('无法获取大小');
+                        }else reject('不支持Range');
+                    };
+                    xhr.onerror=reject;
+                    xhr.send();
+                });
+            }catch(e){
+                console.error('获取大小失败:',e);
+                return 1024*1024;
+            }
+        }
+        
+        function downloadChunk(index,start,end,totalSize){
+            return new Promise((resolve,reject)=>{
+                const xhr=new XMLHttpRequest();
+                xhr.responseType='arraybuffer';
+                xhr.open('GET',GZ_FILE+'?t='+Date.now());
+                xhr.setRequestHeader('Range',`bytes=${start}-${end}`);
+                let lastTime=Date.now(),lastDown=0;
+                xhr.onprogress=e=>{
+                    if(e.lengthComputable){
+                        const down=e.loaded,total=e.total,
+                        percent=Math.round((down/total)*100);
+                        parallelDownloads[index].downloaded=down;
+                        updateParallelProgress(index,percent,down,total);
+                        const now=Date.now(),diff=(now-lastTime)/1000;
+                        if(diff>0.5){
+                            const diffDown=down-lastDown;
+                            downloadSpeed=diffDown/diff;
+                            lastTime=now;
+                            lastDown=down;
+                        }
+                        updateTotalProgress();
+                    }
+                };
+                xhr.onload=()=>{
+                    if(xhr.status===200||xhr.status===206){
+                        resolve({index,data:xhr.response,start,end});
+                    }else{
+                        reject(new Error(`分片${index+1}失败:${xhr.status}`));
+                    }
+                };
+                xhr.onerror=()=>reject(new Error(`分片${index+1}网络错误`));
+                xhr.send();
+            });
+        }
+        
+        async function downloadVersion(){
+            try{
+                const r=await fetch(VER_FILE+'?t='+Date.now());
+                if(!r.ok)throw new Error('无法获取版本');
+                const text=await r.text();
+                return text.trim();
+            }catch(e){
+                console.error('获取版本失败:',e);
+                return isUpdating?serverVersion||'1.0.0':'1.0.0';
+            }
+        }
+        
+        function updateParallelProgress(index,percent,down,total){
+            const bar=document.getElementById(`parallelBar${index}`),
+            label=document.getElementById(`parallelLabel${index}`);
+            if(bar)bar.style.width=`${percent}%`;
+            if(label)label.textContent=`分片${index+1}:${percent}%`;
+            updateDownloadStats();
+        }
+        
+        function updateDownloadStats(){
+            const totalEl=document.getElementById('totalDownloadedValue'),
+            speedEl=document.getElementById('downloadSpeedValue'),
+            threadsEl=document.getElementById('activeThreadsValue'),
+            remainEl=document.getElementById('remainingTimeValue');
+            if(totalEl)totalEl.textContent=formatBytes(totalDownloaded);
+            if(speedEl)speedEl.textContent=formatBytes(downloadSpeed)+'/s';
+            if(threadsEl)threadsEl.textContent=`${activeDownloads}/${PARALLEL_COUNT}`;
+            if(remainEl&&totalSize>0&&downloadSpeed>0){
+                const remain=totalSize-totalDownloaded,
+                seconds=remain/downloadSpeed;
+                if(seconds<60)remainEl.textContent=`${Math.ceil(seconds)}秒`;
+                else{
+                    const m=Math.floor(seconds/60),
+                    s=Math.ceil(seconds%60);
+                    remainEl.textContent=`${m}分${s}秒`;
+                }
+            }else{if(remainEl)remainEl.textContent='计算中'}
+        }
+        
+        function formatBytes(bytes){
+            if(bytes===0)return'0 B';
+            const k=1024,s=['B','KB','MB','GB'];
+            const i=Math.floor(Math.log(bytes)/Math.log(k));
+            return parseFloat((bytes/Math.pow(k,i)).toFixed(2))+' '+s[i];
+        }
+        
+        function updateTotalProgress(){
+            let down=0;
+            parallelDownloads.forEach(ch=>{
+                if(ch&&ch.downloaded)down+=ch.downloaded;
+            });
+            totalDownloaded=down;
+            if(totalSize>0){
+                const p=Math.round((down/totalSize)*100);
+                updateProgress(30+p*0.5,`动次软件本体下载:${p}%`,'双行加速中');
+            }
+            updateDownloadStats();
+        }
+        
+        let speedInterval;
+        function startSpeedCalculator(){
+            const startDown=totalDownloaded,start=Date.now();
+            speedInterval=setInterval(()=>{
+                const elapsed=(Date.now()-start)/1000;
+                if(elapsed>0){
+                    downloadSpeed=(totalDownloaded-startDown)/elapsed;
+                    updateDownloadStats();
+                }
+            },1000);
+        }
+        
+        function stopSpeedCalculator(){
+            if(speedInterval){
+                clearInterval(speedInterval);
+                speedInterval=null;
+            }
+        }
+        
+    function updateProgress(p, msg, time) {
+        progressBar.style.width = p + '%';
+        progressPercent.textContent = p + '%';
+        if (msg) statusText.textContent = msg;
+        if (time) timePrediction.textContent = time;
+        // 修改进度条颜色逻辑
+        if (p < 30) progressPercent.style.color = '#ff6b6b'; /* 浅红色（0-30%） */
+        else if (p < 70) progressPercent.style.color = '#ffb347'; /* 浅橙色（30-70%） */
+        else progressPercent.style.color = '#66cdaa'; /* 浅绿色（70-100%） */
+    }
+        
+        function executeContent(content,fromCache){
+            stopAutoLaunchTimer();
+            statusText.textContent=fromCache?'软件准备就绪':'新版本启动';
+            timePrediction.textContent='启动中...';
+            parallelContainer.style.display='none';
+            actionButtons.style.display='none';
+            loadBtn.style.display='none';
+            warningText.style.display='none';
+            const oldBtn=document.querySelector('.load-btn:not(#loadBtn)');
+            if(oldBtn)oldBtn.remove();
+            setTimeout(()=>{
+                const newDoc=document.open('text/html','replace');
+                newDoc.write(content);
+                newDoc.close();
+            },1500);
+        }
+        
+        function initParallelUI(){
+            parallelBars.innerHTML='';downloadStats.innerHTML='';
+            for(let i=0;i<PARALLEL_COUNT;i++){
+                const pDiv=document.createElement('div');
+                pDiv.className='parallel-progress';
+                pDiv.id=`parallelProgress${i}`;
+                const bDiv=document.createElement('div');
+                bDiv.className='parallel-bar';
+                bDiv.id=`parallelBar${i}`;
+                pDiv.appendChild(bDiv);
+                parallelBars.appendChild(pDiv);
+                const lDiv=document.createElement('div');
+                lDiv.className='parallel-label';
+                lDiv.id=`parallelLabel${i}`;
+                lDiv.textContent=`分片${i+1}:0%`;
+                parallelBars.appendChild(lDiv);
+            }
+            const stats=[{id:'totalDownloaded',label:'已下载'},{id:'downloadSpeed',label:'速度'},
+                {id:'activeThreads',label:'活跃线程'},{id:'remainingTime',label:'剩余时间'}];
+            stats.forEach(s=>{
+                const div=document.createElement('div');
+                div.className='stat-item';
+                div.id=s.id;
+                div.innerHTML=`<strong>${s.label}:</strong><br><span id="${s.id}Value">-</span>`;
+                downloadStats.appendChild(div);
+            });
+        }
+        
+        // ========== 启动 ==========
+        document.addEventListener('DOMContentLoaded',init);
+    </script>
+</body>
+</html>
